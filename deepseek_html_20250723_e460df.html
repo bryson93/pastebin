@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Binpaste - Simple Temporary Text Sharing</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a56d4;
+            --secondary: #3f37c9;
+            --success: #4cc9f0;
+            --light: #f8f9fa;
+            --light-gray: #e9ecef;
+            --gray: #adb5bd;
+            --dark: #212529;
+            --border: #dee2e6;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            line-height: 1.6;
+            color: var(--dark);
+            background-color: #f5f7ff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+            flex: 1;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+        
+        .logo i {
+            font-size: 2.5rem;
+            color: var(--primary);
+        }
+        
+        h1 {
+            color: var(--primary);
+            font-size: 2.25rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .description {
+            color: var(--gray);
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .card {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            margin-bottom: 2rem;
+            animation: slideUp 0.5s ease;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+            color: var(--dark);
+        }
+        
+        textarea {
+            width: 100%;
+            min-height: 250px;
+            padding: 1rem;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            resize: vertical;
+            font-size: 0.95rem;
+            transition: var(--transition);
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+        }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: var(--transition);
+            box-shadow: var(--shadow);
+        }
+        
+        .btn:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn i {
+            font-size: 1rem;
+        }
+        
+        .btn-block {
+            display: flex;
+            width: 100%;
+        }
+        
+        .result {
+            display: none;
+            background-color: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            margin-top: 1.5rem;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .result.show {
+            display: block;
+        }
+        
+        .result-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+        
+        .result-title {
+            color: var(--primary);
+            font-size: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .url-container {
+            display: flex;
+            margin-top: 1rem;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        #paste-url {
+            flex-grow: 1;
+            padding: 0.75rem 1rem;
+            background-color: var(--light);
+            overflow-x: auto;
+            white-space: nowrap;
+            font-family: monospace;
+        }
+        
+        #copy-btn {
+            border-radius: 0;
+            border-left: 2px solid var(--border);
+            background-color: var(--primary);
+        }
+        
+        #copy-btn:hover {
+            background-color: var(--primary-dark);
+        }
+        
+        .expiration-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 0.75rem;
+            margin-top: 0.5rem;
+        }
+        
+        .expiration-option {
+            padding: 0.75rem;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            font-weight: 500;
+        }
+        
+        .expiration-option:hover {
+            border-color: var(--primary);
+        }
+        
+        .expiration-option.selected {
+            background-color: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        
+        .expiration-option i {
+            margin-right: 0.5rem;
+        }
+        
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        
+        .feature-card {
+            background-color: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .feature-icon {
+            font-size: 1.75rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+        
+        .feature-title {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+            color: var(--dark);
+        }
+        
+        .feature-desc {
+            color: var(--gray);
+            font-size: 0.95rem;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 1.5rem;
+            background-color: white;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .footer-text {
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+        
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: var(--dark);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: var(--transition);
+            z-index: 1000;
+        }
+        
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .toast i {
+            font-size: 1.25rem;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 1rem 0;
+        }
+        
+        .spinner {
+            width: 2rem;
+            height: 2rem;
+            border: 3px solid rgba(67, 97, 238, 0.2);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideUp {
+            from { 
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to { 
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 1.5rem 1rem;
+            }
+            
+            .card {
+                padding: 1.5rem;
+            }
+            
+            .expiration-options {
+                grid-template-columns: 1fr 1fr;
+            }
+            
+            .features {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .expiration-options {
+                grid-template-columns: 1fr;
+            }
+            
+            .url-container {
+                flex-direction: column;
+            }
+            
+            #copy-btn {
+                border-left: none;
+                border-top: 2px solid var(--border);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <i class="fas fa-paste"></i>
+                <h1>Binpaste</h1>
+            </div>
+            <p class="description">The simplest way to share text temporarily. Perfect for code snippets, notes, or quick sharing.</p>
+        </header>
+        
+        <div class="card">
+            <div class="form-group">
+                <label for="paste-content"><i class="fas fa-align-left"></i> Your Content</label>
+                <textarea id="paste-content" placeholder="Paste your text here... (supports code, markdown, or any plain text)" autofocus></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label><i class="fas fa-clock"></i> Expiration Time</label>
+                <div class="expiration-options">
+                    <div class="expiration-option selected" data-value="0">
+                        <i class="fas fa-infinity"></i> No expiration
+                    </div>
+                    <div class="expiration-option" data-value="1">
+                        <i class="fas fa-hourglass-start"></i> 1 hour
+                    </div>
+                    <div class="expiration-option" data-value="4">
+                        <i class="fas fa-hourglass-half"></i> 4 hours
+                    </div>
+                    <div class="expiration-option" data-value="12">
+                        <i class="fas fa-hourglass-end"></i> 12 hours
+                    </div>
+                    <div class="expiration-option" data-value="24">
+                        <i class="fas fa-calendar-day"></i> 1 day
+                    </div>
+                    <div class="expiration-option" data-value="168">
+                        <i class="fas fa-calendar-week"></i> 7 days
+                    </div>
+                    <div class="expiration-option" data-value="720">
+                        <i class="fas fa-calendar-alt"></i> 30 days
+                    </div>
+                </div>
+                <input type="hidden" id="expiration" value="0">
+            </div>
+            
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Creating your paste...</p>
+            </div>
+            
+            <button id="create-paste" class="btn btn-block">
+                <i class="fas fa-plus-circle"></i> Create Paste
+            </button>
+            
+            <div class="result" id="result">
+                <div class="result-header">
+                    <div class="result-title">
+                        <i class="fas fa-link"></i> Your paste is ready!
+                    </div>
+                    <div id="expiration-info"></div>
+                </div>
+                <p>Share this URL with others:</p>
+                <div class="url-container">
+                    <div id="paste-url"></div>
+                    <button id="copy-btn" class="btn">
+                        <i class="fas fa-copy"></i> Copy
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="features">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-bolt"></i>
+                </div>
+                <h3 class="feature-title">Lightning Fast</h3>
+                <p class="feature-desc">Create and share pastes in seconds with our optimized service.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <h3 class="feature-title">Secure</h3>
+                <p class="feature-desc">All pastes are private and only accessible to those with the link.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-expand"></i>
+                </div>
+                <h3 class="feature-title">No Limits</h3>
+                <p class="feature-desc">No signup required and no arbitrary limits on paste size.</p>
+            </div>
+        </div>
+    </div>
+    
+    <footer>
+        <p class="footer-text">Binpaste &copy; 2023 | Simple temporary text sharing</p>
+    </footer>
+    
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle"></i>
+        <span id="toast-message">URL copied to clipboard!</span>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Elements
+            const expirationOptions = document.querySelectorAll('.expiration-option');
+            const expirationInput = document.getElementById('expiration');
+            const createPasteBtn = document.getElementById('create-paste');
+            const pasteContent = document.getElementById('paste-content');
+            const resultDiv = document.getElementById('result');
+            const pasteUrl = document.getElementById('paste-url');
+            const copyBtn = document.getElementById('copy-btn');
+            const loadingDiv = document.getElementById('loading');
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toast-message');
+            const expirationInfo = document.getElementById('expiration-info');
+            
+            // Handle expiration option selection
+            expirationOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    expirationOptions.forEach(opt => opt.classList.remove('selected'));
+                    this.classList.add('selected');
+                    expirationInput.value = this.dataset.value;
+                });
+            });
+            
+            // Handle paste creation
+            createPasteBtn.addEventListener('click', async function() {
+                const text = pasteContent.value.trim();
+                const expiration = expirationInput.value;
+                
+                if (!text) {
+                    showToast('Please enter some text to paste', 'error');
+                    pasteContent.focus();
+                    return;
+                }
+                
+                // Show loading state
+                createPasteBtn.disabled = true;
+                loadingDiv.style.display = 'block';
+                resultDiv.classList.remove('show');
+                
+                try {
+                    const apiUrl = `https://kaiz-apis.gleeze.com/api/binpaste?text=${encodeURIComponent(text)}&expiration=${expiration}&apikey=9ba54ea7-c15f-4173-b61f-73f2828f96f4`;
+                    
+                    const response = await fetch(apiUrl);
+                    const data = await response.json();
+                    
+                    if (data.url) {
+                        pasteUrl.textContent = data.url;
+                        resultDiv.classList.add('show');
+                        
+                        // Set expiration info
+                        setExpirationInfo(expiration);
+                        
+                        // Scroll to result
+                        setTimeout(() => {
+                            resultDiv.scrollIntoView({ behavior: 'smooth' });
+                        }, 100);
+                        
+                        showToast('Paste created successfully!', 'success');
+                    } else {
+                        throw new Error(data.message || 'Failed to create paste');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    showToast(error.message || 'An error occurred. Please try again.', 'error');
+                } finally {
+                    createPasteBtn.disabled = false;
+                    loadingDiv.style.display = 'none';
+                }
+            });
+            
+            // Handle copy to clipboard
+            copyBtn.addEventListener('click', function() {
+                const url = pasteUrl.textContent;
+                
+                navigator.clipboard.writeText(url).then(() => {
+                    showToast('URL copied to clipboard!', 'success');
+                }).catch(err => {
+                    console.error('Failed to copy:', err);
+                    showToast('Failed to copy URL', 'error');
+                });
+            });
+            
+            // Show toast notification
+            function showToast(message, type = 'success') {
+                toastMessage.textContent = message;
+                
+                // Set icon and color based on type
+                const toastIcon = toast.querySelector('i');
+                if (type === 'error') {
+                    toast.style.backgroundColor = '#dc3545';
+                    toastIcon.className = 'fas fa-exclamation-circle';
+                } else {
+                    toast.style.backgroundColor = '#28a745';
+                    toastIcon.className = 'fas fa-check-circle';
+                }
+                
+                toast.classList.add('show');
+                
+                // Hide after 3 seconds
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                }, 3000);
+            }
+            
+            // Set expiration information text
+            function setExpirationInfo(expiration) {
+                let text = '';
+                let icon = 'fas fa-infinity';
+                
+                switch(expiration) {
+                    case '0':
+                        text = 'Never expires';
+                        break;
+                    case '1':
+                        text = 'Expires in 1 hour';
+                        icon = 'fas fa-hourglass-start';
+                        break;
+                    case '4':
+                        text = 'Expires in 4 hours';
+                        icon = 'fas fa-hourglass-half';
+                        break;
+                    case '12':
+                        text = 'Expires in 12 hours';
+                        icon = 'fas fa-hourglass-end';
+                        break;
+                    case '24':
+                        text = 'Expires in 1 day';
+                        icon = 'fas fa-calendar-day';
+                        break;
+                    case '168':
+                        text = 'Expires in 7 days';
+                        icon = 'fas fa-calendar-week';
+                        break;
+                    case '720':
+                        text = 'Expires in 30 days';
+                        icon = 'fas fa-calendar-alt';
+                        break;
+                    default:
+                        text = 'Expiration not set';
+                }
+                
+                expirationInfo.innerHTML = `<i class="${icon}"></i> ${text}`;
+            }
+            
+            // Auto-resize textarea to fit content
+            pasteContent.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = (this.scrollHeight) + 'px';
+            });
+        });
+    </script>
+</body>
+</html>
